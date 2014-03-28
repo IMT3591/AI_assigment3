@@ -8,9 +8,11 @@ value = 0
 char = "A"
 arr  = []
 count = 1;
-data = open("images.dta", "w")
+data = open("training.dta", "w")
+#data = open("data.dta", "w")
 for char in string.ascii_uppercase:
-	for count in [1,4,6,8,10,12,14,16,17,20]:
+	for count in [1,3,5,7,9,11,13,15,17,19]:
+	#for count in [2,4,6,8,10,12,14,16,18,20]:
 	#for count in range(1, 21):
 		imgArr= []
 		iName = char + str(count)  + ".jpg"
@@ -30,8 +32,8 @@ for char in string.ascii_uppercase:
 					imOrg[x*3 , 	y*3+2],	imOrg[x*3+1 , y*3+2],	imOrg[x*3+2 , y*3+2]
 				]
 				imNewP[x, y] = sum(arr)/len(arr)
-				imgArr.append( imNewP[ x, y ] )
+				imgArr.append( sum(arr)/float(len(arr)) )
 		imNew.save("con/" + iName)
 		for i in imgArr:
-			data.write( "%d " % i )
+			data.write( str( float(i) ) + " " )
 		data.write( "\n" )
