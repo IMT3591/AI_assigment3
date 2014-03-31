@@ -1,139 +1,232 @@
 //	Header file with basic includes
-#include "stdfx.h"
-
-//	Forward declaration of classes
-class Edge;		
-class Vertice;
+#include <stdio.h>
+#include <iostream>
+#include <vector>
+#include <fstream>
 
 //	Include external source code
-#include "edge.h"
-#include "vertice.h"
-#include "agent2.h" 	//	Magnus' Tree search algorithm
+using namespace std;
+
+class Vertice;
+
+struct Edge{
+	Vertice 	*to, *from; float	weight;
+	Edge( Vertice& tT, Vertice& tF, float tW){
+		to = &tT;	from = &tF;	weight = tW;
+	}
+};
+
+struct List{
+	Edge* edge;
+	List* next;
+	List( Edge* tE ){
+		edge = tE;
+	}
+};
+
+class Vertice{
+	private:
+		int			id;		float		input;		float		output;
+		List* 	FW;		List* 	BW;
+	public:
+		Vertice();
+		Vertice( int );
+		~Vertice();
+		void	insertLink(	int, 	Edge* );
+		void	setInput( 		float );
+		void	display();
+		void	setId( int );
+		float getInput();
+		int		getId();
+		void	calcInput();
+};
+
+struct Image{
+	float		pixels[100];
+};
 
 //	Variable declarations
-Vertice*	vStart;			//	Start element in list of Vertices
-Vertice*	vTail;			//	End element in list of Vertices
-char			graphFile[] = "vertice.lst";
+Image 	LEARN[260];
+Image 	DATA[260];
+Vertice	PERCS[121];
 
 //	Function declarations
-void 	displayVert();
-void	createEnv();
-Vertice*	findVertice( int );
-void	THERMONUCLEARDISASTER();
+void loadDataSet();
+void loadInputs( int, int );
+void setUpNetwork();
+void display();
 
 //	Main 
 int main(){
-	Agent* bender;				//Declare agent variable
-	
-	//Initiate variables
-	vTail		= new Vertice(-1, NULL, NULL);	//Initiate the end of vertice list
-	vStart	=	new Vertice(-1, vTail, NULL);	//Initiate the start of vertice list
-	vTail->setNext( vTail );								//Set vTail to point to itsself
-
-	cout << "\nBender: \"Generate graph, baby.\"";
-	createEnv();												//Generate graph environment based on file
-	cout << "\nGraph generated";
-	cout << "\nBender: \"Shut up, baby. I know it.\"";
-
-	int s=1, e=24;			//Id of start and end node
-	bender = new Agent( findVertice(1), 24 );//Initiate the agent with start & goal
-	do{
-		cout << "\nRead in start and edge id between 1-24, \"0 0\" to quit:\t";
-		cin  >> s >> e;		//Read in 2 integers form stdin
-		if( (s >= 1 && s <= 24) && ( e >= 1 && e <= 24) ){//If integers in range
-			cout << "\nBender: \"This is the worst kind of graph traversal. The kind against graphs!\"";
-			bender->upInfo( findVertice( s ), e );	//Update agent info
-			cout << "\nBender: \"Traversing from \"" << s << " to " << e << ".\"";
-			bender->aStar(); 		//Run A Star Tree Search Algorithm
-			cout << "\nTIME: " << bender->getCount() << " lines of code\n";
-		}
-	}while( (s >= 1 && s <= 24) && ( e >= 1 && e <= 24) );
-
-	THERMONUCLEARDISASTER(); //Clean up environment
-	
-	delete vStart;
-	delete vTail;
-	delete bender;
+	loadDataSet();
+	setUpNetwork();
+	loadInputs( 0, 0 );	//load training set 0
+	PERCS[120].calcInput();
+	cout << "OUTPUT: " << PERCS[120].getInput();
+	display();
 	return 0;
 }
 
-/** Display the vertices and their edges ascending **/
-void displayVert(){
-	cout << "\nDisplaying vertices.\n";
-	Vertice* x = vStart->getNext();			//Vertice ptr set to first element
-	while ( x != vTail ){								//While the ptr isn't at the Tail
-		x->display();											//call the vertice display function
-		x = x->getNext();									//go to next element in list
-	}
-}
+//	Function declarations
+void setUpNetwork(){
+	int hor, ver;
+	Edge* nEdge;
+	List*	nFW, *nBW;
 
-/**	Search for and return the vertice with the key that equals k **/
-Vertice* findVertice( int k ){
-	Vertice* x = vStart->getNext();			//Set x to the first vertice in list
-	while ( x != vTail ){								//While the ptr isn't at the Tail
-		if( x->checkId( k ) )							//Return vertice if correct
-			return x;
-		x = x->getNext();									//go to next element in list
-	}
-	return NULL;												//Return NULL if not found
-}
+	for( int i=0; i<100; i++){
+		ver = i%10; 						//Column
+	 	hor	= (i-(i%10)) / 10;	//Row
+		
+		//Vertical shit
+		nEdge = new Edge( PERCS[100+ver], PERCS[i], 0.5);		//Edge
+		PERCS[i].insertLink( 1, nEdge );			//Forward link
+		PERCS[100+ver].insertLink( 0, nEdge );//Backward link
 
-/**	Read number of vertices from file and populate the vertice list.
-	Then read the edges from the file and create links between the vertices. **/
-void createEnv(){
-	int verts = 0;											//number of vertices in graph
-	int start, end, cost;								//tmp values
-	Vertice		*x = vStart,							//Vertice ptrs for searching when creating
-						*z = vStart;							//	links between two nodes
-	ifstream 	in;												//Input stream
-	in.open( graphFile );								//open the file
+		//Horizontal shit
+		nEdge = new Edge( PERCS[110+hor], PERCS[i], 0.5);		//Edge
+		PERCS[i].insertLink( 1, nEdge );			//Forward link
+		PERCS[110+hor].insertLink( 0, nEdge );//Backward link
+	}
 	
-	if( in.is_open() ){
-		in >> verts;											//Read number of vertices in graph
-		for( int i=1; i<=verts; i++){			//Create vertices in list with unique keys
-			while( x->getNext() != vTail ){ //Traverse to last position
-				x = x->getNext();							// move to next element in list
-			}//while end
-																			//Create vertice in last position
-			Vertice* y = new Vertice( i, vTail, NULL );
-			x->setNext( y ); 								//Move pointer for 2nd last vertice to the
-																			//	new node
-		}//for end
-		while( !in.eof() ){								//To read the Edge list until end of file
-			x = z = vStart;									//Initialize search ptrs to start of list
-			start = end = cost = -1;				//Zero-out values;
-			in >> start >> end >> cost;			//Read values from input stream
-															//Traverse list until start & end vertice is found
-			while( !x->checkId( start ) && x->getNext() != vTail )	x = x->getNext();
-			while( !z->checkId( end ) 	&& z->getNext() != vTail )	z = z->getNext();
-			x->createEdge( cost, z );				//Create edge from vertice A to vertice B
-			z->createEdge( cost, x );				//Create edge from vertice B to vertice A
-		}//while end
-	}//is_open end
-	in.close();					//Close handle to file
+	//Hidden layer
+	for( int i=100; i < 120; i++){
+		nEdge = new Edge( PERCS[120], PERCS[i], 0.5);
+		PERCS[i].insertLink( 1, nEdge );	//Forward link
+		PERCS[120].insertLink( 0, nEdge );//Backward link
+	}
 }
 
-//Go through vertice list and delete all verices
-//For each vertice delete its edges
-void	THERMONUCLEARDISASTER(){
-	Vertice	*cVe	= vStart->getNext();								//ptr to unhooked element
-	Edge		*cEd1;
-	Edge		*cEd2;
-	while( cVe != vTail ){	//Until it is has removed all items
-		cEd1 = cVe->getEdge();
-		while( cEd1->getNext() != NULL ){
-			cEd2 = cEd1->getNext();
-			cEd1->setNext( cEd2->getNext() );
-			delete cEd2;
+void loadDataSet(){
+	ifstream	inp;
+	float x;
+	inp.open("data.dta");
+	if( inp.is_open() ){
+		for( int j=0; j<260; j++){
+			for( int i=0; i<100; i++){
+				inp >> DATA[j].pixels[i];
+			}//for
+		}//for
+	}//if
+	inp.close();
+	
+	inp.open("training.dta");
+	if( inp.is_open() ){
+		for( int j=0; j<260; j++){
+			for( int i=0; i<100; i++){
+				inp >> LEARN[j].pixels[i];
+			}//for
+		}//for
+	}//if
+	inp.close();
+
+	for(int i=0; i<121; i++)
+		PERCS[i].setId( i );
+}
+
+void loadInputs( int set, int index ){
+	if( index >= 0 && index < 260 ){
+		for( int i=0; i < 100; i++){
+			if( set == 0 ) //learning
+				PERCS[i].setInput( LEARN[index].pixels[i] );
+			else 					//use
+				PERCS[i].setInput( DATA[index].pixels[i] );
 		}
-		cVe = cVe->getNext();
 	}
-	cEd1 = cEd2 = NULL;
-	delete cEd1;
-	delete cEd2;
-	while( vStart->getNext() != vTail ){	//Until it is has removed all items
-		cVe = vStart->getNext();						//set cur to first element
-		vStart->setNext( cVe->getNext() );	//Unhook element from list
-		delete cVe;													//delete element
+	else
+		cout << "OUT OF RANGE\n";
+}
+
+void display(){
+	for( int i=0; i<121; i++){
+		PERCS[i].display();
 	}
 }
+
+//
+//			VERTICE CLASS FUNCTIONS
+Vertice::Vertice( ){
+	Edge* blow = new Edge(PERCS[0], PERCS[0], -1);
+	FW 		= new List( blow );
+	BW 		= new List( blow );
+	id 		= 0;
+	input	= 0.1;
+	output=	0.1;
+}//function
+
+Vertice::Vertice( int tID ){
+	Edge* blow = new Edge(PERCS[0], PERCS[0], -1);
+	FW 		= new List( blow );
+	BW 		= new List( blow );
+	id 		= tID;
+	input	= 0.1;
+	output=	0.1;
+}//function
+
+Vertice::~Vertice(){
+}//function
+
+void Vertice::insertLink( int tDir, Edge* tEdge){
+	List* nList = new List( tEdge );
+	if( tDir == 0 ){
+		nList->next = BW->next;
+		BW->next = nList;
+	}
+	else{
+		nList->next = FW->next;
+		FW->next = nList;
+	}
+}
+
+void Vertice::setInput( float tIn ){
+	input = tIn;
+}
+
+void Vertice::display(){
+	cout << "\n" << id << ":\t" << input << "/" << output << "\n\tFW[";
+	List* cur = FW->next;
+	Edge* ed;
+	while( cur != NULL ){
+		ed = cur->edge;
+		//cout << " [" << ed->from->getId() << "," << ed->to->getId() << "," << ed->weight << "] ";
+		cout << " [" << input << "," << ed->weight << "] ";
+		cur = cur->next;
+	}
+	cout << "]\n";
+	
+	cur = BW->next;
+	cout << "\tBW[";
+	while( cur != NULL ){
+		ed = cur->edge;
+		cout << " [" << ed->from->getId() << "," << ed->to->getId() << "," 
+				 << ed->weight << "] ";
+		cur = cur->next;
+	}
+	cout << "]\n";
+}
+
+void Vertice::setId( int tID ){
+	id = tID;
+}
+
+int  Vertice::getId(){
+	return id;
+}
+
+float  Vertice::getInput(){
+	return input;
+}
+
+void Vertice::calcInput(){
+	List* lst = BW->next;
+	float	sum = 0;
+	int		c = 0;
+	while( lst != NULL ){
+		lst->edge->from->calcInput();
+		sum = sum + (lst->edge->from->getInput() * lst->edge->weight);
+		input = sum;
+		lst = lst->next;
+		c++;
+	}
+	cout << "\n" << id << "[" << c << "]: " << input;
+}
+
