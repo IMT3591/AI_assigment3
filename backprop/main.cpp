@@ -11,12 +11,13 @@ using namespace std;
 const int 	NUM_OF_LETTER		= 26;
 const int 	SETS_PER_LETTER	= 20;
 const int 	NUM_OF_PIXELS		= 100;
-const int 	NUM_OF_OUTPUTS	= 5;		//binary input
-//const int 	NUM_OF_OUTPUTS	= 26;		//char output
+//const int 	NUM_OF_OUTPUTS	= 5;		//binary input
+const int 	NUM_OF_OUTPUTS	= 26;		//char output
 const int 	NUM_IN_HIDDEN		= 2;
-const int 	NUM_OF_LAYERS		= 2;	//Hidden layers
-const float	LEARNING_RATE		= 0.1;
-const float	THRESHOLD				= 0.5;
+const int 	NUM_OF_LAYERS		= 1;	//Hidden layers
+const float	LEARNING_RATE		= 0.4;
+const float	MOMENTUM				= 0.1;
+const float	THRESHOLD				= 0.05;
 
 class Node;
 
@@ -25,6 +26,7 @@ class Weight{
 		int			id;
 		Node*		to;
 		float		weight;
+		float		change;
 		Weight*	next;
 	public:
 		Weight(){};
@@ -58,13 +60,14 @@ class Node{
 		Node( int );
 		Node( int, Weight* );
 	
-		int			getId(){			return id;			};
-		float		getInput(){		return input;		};
-		float		getOutput(){	return output;	};
-		float		getError(){		return error;		};
-		Node*		getNext(){ 		return next; 		};
+		int			getId(){					return id;					};
+		float		getInput(){				return input;				};
+		float		getOutput(){			return output;			};
+		float		getError(){				return error;				};
+		Node*		getNext(){		 		return next; 				};
 		bool		getConvergence(){ return convergence; };
 
+		void		setInput();
 		void		setInput( float );
 		void		setConvergence( bool );
 		void		setWeights( Weight* );
@@ -109,7 +112,7 @@ Node*		hidden[NUM_OF_LAYERS];
 Node*		output;
 Data* 	dHead;
 int*		curTarget;
-
+Data*		inData;
 
 void		loadDataSet();							//Load dataset into Data objects from file
 void		displayDataSet();						//Displays the different datasets loaded
@@ -129,40 +132,56 @@ void		saveANN();									//
 
 int main(){
 	char testChar = 'A';
+	char endChar 	= 'Z';
 	int  testSet	= 0;
-	int	 count    = 0;	
+	int	 endSet		= 10;
 
 	loadDataSet();
 	networkSetup();
 
-	while( testSet < 10  || testChar != 'Z' ){
+	do{
 		pushInput( testChar, testSet );
+		input->setInput();
 		pushForward();
 		calcError();
+		treshold();
 		convergence();
-	
-		if( testSet == 10-1 && testChar=='Z' ){
-			if( treshold() )	break;
+
+		if(testChar == endChar){
+			cout << "\nTest: " << testChar << "/" << testSet;
+			for(int i=0; i<NUM_OF_OUTPUTS; i++)
+				cout << " " << curTarget[i];
+			output->display();
+			cout << "\n";
+
+			testSet++;
 			testChar = 'A';
-			testSet = 0;
-		}
-		else{
-			if( testChar != 'Z' )
-				testChar = char( int( testChar ) + 1 );
-			else if( testChar == 'Z' ){
-				testChar = 'A';
-				testSet ++;
+			
+			if( testSet == endSet){
+				testSet		= 0;
+				testChar	= 'A';
+				saveANN();
 			}
 		}
-		count ++;
-		if( count % 10000 == 0) {
-			cout << "\nNew round  " << count << ": " << testChar << ":"  
-				 << testSet 				<< "\n";
-			output->display();
+		else{
+			testChar = char( int(testChar) + 1 );
 		}
-	}
-	saveANN();
+	}	while( !treshold() );
+	
+	//display();
+	
 	return 0;
+}
+
+void	Node::setInput(){
+	input		= inData->getValue( id );
+	output	= input;
+	if( next != NULL )	next->setInput();
+}
+
+void	Node::setInput( float f){
+	input	= f;
+	output= f;
 }
 
 
@@ -199,18 +218,22 @@ void saveANN(){
 }
 
 
+void	Node::setConvergence( bool con ){
+	convergence = con;
+}
+
 bool 	treshold(){
 	Node* cNode = output;
-	int i = 0;
+	bool	ret = true;
 	while( cNode != NULL ){
-		float delta = curTarget[i] - cNode->getOutput();
+		float delta = curTarget[ cNode->getId() ] - cNode->getOutput();
 		if( abs( delta ) >= THRESHOLD )
-			return false;
-		i++;
+			ret = false;
+		else
+			cNode->setConvergence( true );
 		cNode = cNode->getNext();
 	}
-	cout << "TRESHOLD";
-	return true;
+	return ret;
 }
 
 
@@ -223,7 +246,8 @@ float Weight::sumErrors(){
 }
 
 void Weight::updateWeight( float delta ){
-	weight += delta;
+	weight += delta + (MOMENTUM * change);
+	change = delta;
 }
 
 void Node::updateWeights(){
@@ -231,8 +255,10 @@ void Node::updateWeights(){
 	Node*		cNode;
 	while( cWeight != NULL ){
 		cNode = cWeight->getNode();
-		float delta = LEARNING_RATE * (cNode->getError() * output);
-		cWeight->updateWeight( delta );
+		if( !cNode->getConvergence() ){
+			float delta = LEARNING_RATE * cNode->getError() * output;
+			cWeight->updateWeight( delta );
+		}
 		cWeight = cWeight->getNext();
 	}
 	if( next != NULL )	next->updateWeights();
@@ -254,14 +280,15 @@ void	Node::calcLayerError(){
 }
 
 void	Node::calcEndError( int index ){
-	error = ( curTarget[ index ] - output ) * output * ( 1 - output );
+	error = ( curTarget[ id ] - output ) * output * ( 1 - output );
 	if( next != NULL )	next->calcEndError( index + 1 );
 };
 
 void calcError(){
 	output->calcEndError( 0 );
-	hidden[1]->calcLayerError();
-	hidden[0]->calcLayerError();
+	for(int i=NUM_OF_LAYERS-1; i>=0; i--){
+		hidden[i]->calcLayerError();
+	}
 	input->calcLayerError();
 }
 
@@ -301,7 +328,7 @@ void pushForward(){
 
 void	displayTarget(){
 	for( int i=0; i<NUM_OF_OUTPUTS; i++)
-		cout << curTarget[i] << " ";
+		cout << curTarget[ i ] << " ";
 }
 
 void Weight::display(){
@@ -316,12 +343,14 @@ void Weight::display(){
 
 void Node::display(){
 	cout << "\n"				<< id
-			 << ":\tWeights:\tIN: "	<< input
+			 << ": Weights:  IN: "	<< input
 			 << "\tOUT: " 	<< output 
 			 << "\tERR: "		<< error
-			 << "\tDEL: " 	<< abs(curTarget[ id ] - output);
+			 << "\tDEL: " 	<< abs(curTarget[ id ] - output)
+			 << "\tCON: ";
+	( convergence ) ? cout << "true": cout << "false";
 	if( weight != NULL )
-		cout << "\n\t#[id : weight\t/ input\t\t/ output ]";
+		cout << "\n   #[id : weight\t/ input\t\t/ output ]";
 	if( weight != NULL )	weight->display();
 	if( next 	 != NULL )	next->display();
 }
@@ -361,8 +390,11 @@ void	Node::fornicate(){
 };
 
 void	Node::reset(){
-	input=0; output=0; error=0;
-	if(next != NULL) next->reset();
+	input		= 0;
+	output	= 0;
+	error		= 0;
+	convergence = false;
+	if( next != NULL ) next->reset();
 };
 
 void clearInput(){
@@ -372,25 +404,21 @@ void clearInput(){
 }
 
 void	pushInput( char c, int i){
-	clearInput();
 	bool	found 	= false;
 	int		count		=	0;
 	Data* curData = dHead;
-	Node* curNode = input;
-	while( curData != NULL  ){
+	
+	clearInput();
+	while( curData != NULL && found != true){
 		if( curData->getFasit() == c ){
-			found = true;		count++;
-			if( count == i || count == SETS_PER_LETTER-1 )	break;
+			if( count == i || count == SETS_PER_LETTER-1 ){
+				found = true;
+				inData = curData;
+				curTarget = curData->getTarget( );
+			}
+			count++;
 		}
-		curData = curData->getNext();
-	}
-	if( found ){
-		curTarget = curData->getTarget();
-		for( int j=0; j<NUM_OF_PIXELS; j++ ){
-			curNode->updateInput( curData->getValue(j) );
-			curNode->fornicate();
-			curNode = curNode->getNext();
-		}
+		curData = curData->getNext( );
 	}
 }
 
@@ -471,7 +499,7 @@ void loadDataSet(){
 	float	*tVals;
 
 	ifstream in;
-	in.open("./data.dta");
+	in.open("./data2.dta");
 
 	in >> tFas;	in.ignore();
 	while( !in.eof() ){
@@ -525,6 +553,7 @@ Weight::Weight( int tI, float tW, Node* tN){
 		id		=	tI;
 		to		= tN;
 		weight=	tW;
+		change= 0.0;
 		next	= NULL;
 }
 
@@ -532,10 +561,6 @@ Weight::Weight( int tI, float tW, Node* tN){
 void 	Data::setNext( Data* tData ){
 	next = tData;
 }		
-
-void	Node::setInput( float f){
-	input = f;
-}
 
 void	Node::setWeights( Weight* tW ){
 	weight = tW;

@@ -11,12 +11,11 @@ using namespace std;
 const int 	NUM_OF_LETTER		= 26;
 const int 	SETS_PER_LETTER	= 20;
 const int 	NUM_OF_PIXELS		= 100;
-const int 	NUM_OF_OUTPUTS	= 5;		//binary input
-//const int 	NUM_OF_OUTPUTS	= 26;		//char output
+//const int 	NUM_OF_OUTPUTS	= 5;		//binary input
+const int 	NUM_OF_OUTPUTS	= 26;		//char output
 const int 	NUM_IN_HIDDEN		= 2;
 const int 	NUM_OF_LAYERS		= 2;	//Hidden layers
 const float	LEARNING_RATE		= 0.25;
-const float	THRESHOLD				= 0.04;
 
 class Node;
 
@@ -123,20 +122,20 @@ int main(){
 	loadDataSet();
 	networkSetup();
 
-	while( testSet < 10 || testChar != 'Z' ){
+	while( testSet < 10 || testChar != 'B' ){
 		cout << "\nNew round  " << count << ": " << testChar << ":"  
 				 << testSet 				<< "\n";
 		pushInput( testChar, testSet );
 		pushForward();
 
-		/*input->display();
+		output->display();
 		classify( testSet, testChar );
 		cout << "\naaa";
 		for( int i=0; i<NUM_OF_OUTPUTS; i++)
 			cout << "\t\t" << curTarget[i];
 		cout << "\n";
-		*/
-		if( testChar == 'Z' ){
+		
+		if( testChar == 'B' ){
 			testSet++;
 			testChar = 'A';
 		}
