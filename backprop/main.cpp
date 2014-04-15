@@ -13,21 +13,21 @@ const int 	SETS_PER_LETTER	= 20;
 const int 	NUM_OF_PIXELS		= 100;
 //const int 	NUM_OF_OUTPUTS	= 5;		//binary input
 const int 	NUM_OF_OUTPUTS	= 26;		//char output
-const int 	NUM_IN_HIDDEN		= 2;
+const int 	NUM_IN_HIDDEN		= 10;
 const int 	NUM_OF_LAYERS		= 1;	//Hidden layers
-const float	LEARNING_RATE		= 0.4;
-const float	MOMENTUM				= 0.1;
+const float	LEARNING_RATE		= 0.7;
+const float	MOMENTUM				= 0.03;
 const float	THRESHOLD				= 0.05;
 
 class Node;
 
 class Weight{
 	private:
-		int			id;
-		Node*		to;
-		float		weight;
-		float		change;
-		Weight*	next;
+		int			id;			//	identifier
+		Node*		to;			//	next layer the weight links to
+		float		weight;	//	the current weight
+		float		change;	//	the last delta change
+		Weight*	next;		//	the next Weight element in list
 	public:
 		Weight(){};
 		Weight( int, float, Node* );
@@ -48,13 +48,13 @@ class Weight{
 
 class Node{
 	private:
-		int 		id;
-		float		input;
-		float		output;
-		float		error;
-		Weight*	weight;
-		Node* 	next;
-		bool		convergence;
+		int 		id;					//	the identifier
+		float		input;			//	the input value as decimal
+		float		output;			//	the output value as decimal
+		float		error;			//	the current error of the node as decimal
+		Weight*	weight;			//	the link to the Weight list to next layer
+		Node* 	next;				//	next Node in the list
+		bool		convergence;//	If the Node is within the treshold
 	public:
 		Node( ){};
 		Node( int );
@@ -87,18 +87,18 @@ class Node{
 
 class Data{
 	private:
-		char	fasit;
-		int		*target;
-		float *values;
-		Data*	next;
+		char	fasit;		//	The identifying type of the Data
+		int		*target;	//	Int array of 0/1 values representing the target
+		float *values;	//	float array of values representing the 100 pixels
+		Data*	next;			//	link to next Data element in the list
 
 	public:
 		Data(){};
 		Data( char tF, int *tT, float *tV );
 
-		Data* getNext(){ 					return next;			};
-		float	getValue( int i ){	return values[i]; };	
-		char  getFasit(){ 				return fasit;			};
+		Data* getNext(){ 					return next;			};//Grab next element
+		float	getValue( int i ){	return values[i]; };//Grab a specific pixel value
+		char  getFasit(){ 				return fasit;			};//Get the id type
 
 		void 	setNext( Data* );
 
@@ -107,12 +107,12 @@ class Data{
 		int*	getTarget(){	return target;	}
 };
 
-Node*		input;
-Node*		hidden[NUM_OF_LAYERS];
-Node*		output;
-Data* 	dHead;
-int*		curTarget;
-Data*		inData;
+Node*		input;									//Ptr to input layer list
+Node*		hidden[NUM_OF_LAYERS];	//Array of ptrs to all hidden layers
+Node*		output;									//Ptr to the output layer list
+Data* 	dHead;									//Ptr to the head of Data list
+int*		curTarget;							//Ptr to the array specifying the current target
+Data*		inData;									//Ptr to the current input data element
 
 void		loadDataSet();							//Load dataset into Data objects from file
 void		displayDataSet();						//Displays the different datasets loaded
@@ -127,7 +127,7 @@ void		calcError( );								//Calculates the errors for the nodes
 void		displayTarget();						//displays the target output
 void		convergence();							//Update weights in the network. front2back
 bool		treshold();									//Check that the output is within threshold
-void		saveANN();									//
+void		saveANN();									//Saves the current set of weights to file
 
 
 int main(){
@@ -135,46 +135,55 @@ int main(){
 	char endChar 	= 'Z';
 	int  testSet	= 0;
 	int	 endSet		= 10;
+	int  count		= 0;
+	int	 endCount = 200;
 
-	loadDataSet();
-	networkSetup();
+	loadDataSet();	//Load input data
+	networkSetup();	//Set up the network with links
 
 	do{
-		pushInput( testChar, testSet );
-		input->setInput();
-		pushForward();
-		calcError();
-		treshold();
-		convergence();
+		pushInput( testChar, testSet );	//Select inputdata to input-layer
+		input->setInput();							//Push the inputs to the input layer
+		pushForward();									//Propagate the input through the network
+		calcError();										//Calculate the errors in the network
+		treshold();											//calculate the tresholds for the network
+		convergence();									//Change weights in the network for all
+																		//		nodes that are not converged
 
-		if(testChar == endChar){
-			cout << "\nTest: " << testChar << "/" << testSet;
-			for(int i=0; i<NUM_OF_OUTPUTS; i++)
+		if(testChar == endChar){				//If at last characther in the set
+			cout << "\nTest: "<< count << "\t" << testChar//Print information
+					 << "/" << testSet;
+			for(int i=0; i<NUM_OF_OUTPUTS; i++)//print target output
 				cout << " " << curTarget[i];
-			output->display();
-			cout << "\n";
+//			output->display();						//Display output layer
+			cout << "\n";			
 
-			testSet++;
-			testChar = 'A';
+			testSet++;										//increment testSet
+			testChar = 'A';								//Reset testChar
 			
-			if( testSet == endSet){
-				testSet		= 0;
-				testChar	= 'A';
-				saveANN();
+			if( testSet == endSet){				//If at last testSet
+				testSet		= 0;							//Reset counter
+				testChar	= 'A';						//Reset character
+				count ++;										//Failsafe to avoid endless loop
+				saveANN();									//Save weights to file
 			}
 		}
 		else{
 			testChar = char( int(testChar) + 1 );
 		}
-	}	while( !treshold() );
+	}	while( !treshold() && count < endCount );
 	
-	//display();
+	display();
 	
 	return 0;
 }
 
+
 void	Node::setInput(){
-	input		= inData->getValue( id );
+	if( inData->getValue( id ) >= 128 )
+		input = 1;
+	else
+		input = 0;
 	output	= input;
 	if( next != NULL )	next->setInput();
 }
@@ -227,8 +236,11 @@ bool 	treshold(){
 	bool	ret = true;
 	while( cNode != NULL ){
 		float delta = curTarget[ cNode->getId() ] - cNode->getOutput();
-		if( abs( delta ) >= THRESHOLD )
+		//float delta = cNode->getError();
+		if( abs( delta ) >= THRESHOLD ){
 			ret = false;
+			cNode->setConvergence( false );
+		}
 		else
 			cNode->setConvergence( true );
 		cNode = cNode->getNext();
@@ -346,7 +358,7 @@ void Node::display(){
 			 << ": Weights:  IN: "	<< input
 			 << "\tOUT: " 	<< output 
 			 << "\tERR: "		<< error
-			 << "\tDEL: " 	<< abs(curTarget[ id ] - output)
+			 << "\tDEL: " 	<< abs( curTarget[ id ] - output )
 			 << "\tCON: ";
 	( convergence ) ? cout << "true": cout << "false";
 	if( weight != NULL )
