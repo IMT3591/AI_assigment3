@@ -5,5 +5,5 @@ learn:
 
 test:
 	clear
-	g++ -o eval.exe test.cpp
+	g++ -o check.exe eval.cpp
 
