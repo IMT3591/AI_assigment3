@@ -8,10 +8,11 @@ for i in string.ascii_uppercase:
 tab = open("chapters/tableA.tex", "w")
 
 tab.write("\\begin{longtable}{")
+tab.write("\n\t p{0.010\\textwidth}  ")
 tab.write("\n\t p{0.010\\textwidth} | ")
 for i in range(26):
 	tab.write("\n\t p{0.013\\textwidth}")
-tab.write(" \n}\n\\textbf{\#} ")
+tab.write(" \n}\n\\textbf{ID} & \\textbf{\\#} ")
 
 for c in y:
 	tab.write("& \\textbf{" + str(c) + "} ")

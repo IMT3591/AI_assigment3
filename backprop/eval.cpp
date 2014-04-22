@@ -119,10 +119,10 @@ void		classify( int, char );			//
 int main(){
 	char testChar = 'A';							//Initial image to start on
 	char endChar 	= 'Z';							//Which image to end on
-	int  testSet	= 10;								//Initial imageset to start on
+	int  testSet	= 0;								//Initial imageset to start on
 	int	 endSet		= 20;								//Which imageset to end on
 	int  count		= 0;								//Counter for which round is running
-
+	bool quit			= false;						//quit checker
 	loadDataSet();										//Load input data
 	networkSetup();										//Set up the network with links
 
@@ -133,28 +133,33 @@ int main(){
 	cout << "\n";
 
 	do{
+		if( testChar == endChar && testSet == endSet-1 )
+			quit = true;
 		findInput( testChar, testSet );		//Select inputdata to input-layer
 		input->setInput();								//Push the inputs to the input layer
 		pushForward();										//Propagate the input through the network
 		classify(	testSet, testChar );		//Classify the data in RAW/percentages
 
-		if( testSet == endSet ){					//If end of current character set 
+		if( testSet == endSet-1 ){					//If end of current character set 
 			cout << "AVG, " << testChar << ", \n\n"; 					//print to skips for CSV
-			cout << " ,   ";								//Print letter IDs on top
-			for( int i=0; i<NUM_OF_LETTER; i++){
-				cout << "," << right	<< setw(5)	<< char( int('Z')-i );
+			if( !quit ){
+				cout << " ,   ";								//Print letter IDs on top
+				for( int i=0; i<NUM_OF_LETTER; i++){
+					cout << "," << right	<< setw(5)	<< char( int('Z')-i );
+				}
+				cout << "\n";
 			}
-			cout << "\n";
 			
 			testChar=char(int(testChar)+1);	//Grab the next character set
-			testSet		= 10;									//Reset counter
+			testSet		= 0;									//Reset counter
 		}																	//End if check for last character of set
 		else{															//If not last character of set
 			testSet++;											//increment testSet
 		}																	//End of else
 
 		clearInput();											//Clear the values
-	}while( testChar!=endChar || testSet<endSet );//Run the tests for all data set
+	}while( !quit );
+//	}while( testChar != endChar || testChar == endChar && testSet != endSet );//Run the tests for all data set
 	
 	return 0;														//Exit gracefully
 }
@@ -172,9 +177,9 @@ void classify( int i, char c ){
 	cout<< right << setw(3)	<< i << ", " << c;
 	while( cNode != NULL ){		//Loop through the output layer
 																												//print actual value
-		cout << "," << right	<< setw(10)	<< cNode->getOutput();
+		//cout << "," << right	<< setw(10)	<< cNode->getOutput();
 																												//print value in percent
-		//cout << "," << right	<< setw(4)	<< int(cNode->getOutput() * 100) << "%";
+		cout << "," << right	<< setw(4)	<< int(cNode->getOutput() * 100) << "%";
 		cNode = cNode->getNext();														//go to next node
 	}													//end of loop
 	cout << "\n";							//print new line

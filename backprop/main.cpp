@@ -136,7 +136,7 @@ int main(){
 	char testChar = 'A';							//Initial image to start on
 	char endChar 	= 'Z';							//Which image to end on
 	int  testSet	= 0;								//Initial imageset to start on
-	int	 endSet		= 10;								//Which imageset to end on
+	int	 endSet		= 20;								//Which imageset to end on
 	int  count		= 0;								//Counter for which round is running
 	int	 endCount =	100000;						//Run learning for this many rounds
 
@@ -162,7 +162,7 @@ int main(){
 
 		if(testChar == endChar){				//If at last characther in the set
 			testChar	= 'A';						//Reset character
-			testSet++;										//increment testSet
+			testSet += 2;										//increment testSet
 			
 			if( testSet == endSet){				//If at last testSet
 				testSet		= 0;							//Reset counter
