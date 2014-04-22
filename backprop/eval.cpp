@@ -119,8 +119,8 @@ void		classify( int, char );			//
 int main(){
 	char testChar = 'A';							//Initial image to start on
 	char endChar 	= 'Z';							//Which image to end on
-	int  testSet	= 0;								//Initial imageset to start on
-	int	 endSet		= 10;								//Which imageset to end on
+	int  testSet	= 10;								//Initial imageset to start on
+	int	 endSet		= 20;								//Which imageset to end on
 	int  count		= 0;								//Counter for which round is running
 
 	loadDataSet();										//Load input data
@@ -137,19 +137,22 @@ int main(){
 		input->setInput();								//Push the inputs to the input layer
 		pushForward();										//Propagate the input through the network
 		classify(	testSet, testChar );		//Classify the data in RAW/percentages
+
 		if( testSet == endSet ){					//If end of current character set 
-			cout << "AVG, ,\n\n"; 					//print to skips for CSV
-			testChar=char(int(testChar)+1);	//Grab the next character set
-			testSet		= 0;									//Reset counter
+			cout << "AVG, " << testChar << ", \n\n"; 					//print to skips for CSV
 			cout << " ,   ";								//Print letter IDs on top
 			for( int i=0; i<NUM_OF_LETTER; i++){
 				cout << "," << right	<< setw(5)	<< char( int('Z')-i );
 			}
 			cout << "\n";
+			
+			testChar=char(int(testChar)+1);	//Grab the next character set
+			testSet		= 10;									//Reset counter
 		}																	//End if check for last character of set
 		else{															//If not last character of set
 			testSet++;											//increment testSet
 		}																	//End of else
+
 		clearInput();											//Clear the values
 	}while( testChar!=endChar || testSet<endSet );//Run the tests for all data set
 	
@@ -159,19 +162,19 @@ int main(){
 
 /**
 	*	\author	20140416 - Magnus Øverbø	
-	*	\brief	
+	*	\brief	Prints/classifies the output of the output nodes in percent or
+	*	decimals
 	**/
 void classify( int i, char c ){
 	Data*	cData = inData;			//Temp ptr for holding current element of dataset
 	Node*	cNode	= output;			//Temp ptr for holding the output list
 														//Print out info about the data set
-	cout << c << "," << right << setw(3)	<< i;
-	cout.precision(3);				//Set precision of decimals
+	cout<< right << setw(3)	<< i << ", " << c;
 	while( cNode != NULL ){		//Loop through the output layer
 																												//print actual value
-		//cout << "," << right	<< setw(10)	<< cNode->getOutput();
+		cout << "," << right	<< setw(10)	<< cNode->getOutput();
 																												//print value in percent
-		cout << "," << right	<< setw(4)	<< int(cNode->getOutput() * 100) << "%";
+		//cout << "," << right	<< setw(4)	<< int(cNode->getOutput() * 100) << "%";
 		cNode = cNode->getNext();														//go to next node
 	}													//end of loop
 	cout << "\n";							//print new line
@@ -187,7 +190,6 @@ void classify( int i, char c ){
 	**/
 void	Node::setInput(){
 	input		= inData->getValue( id );			//Set input to real pixel value 0-255
-	//output	= ( input / 128.0 ) - 1;			//Calculate the value to a relative value
 	output	= (input > 200) ? 0 : 1;			//Calculate the value to a relative value
 	if( next != NULL )	next->setInput();	//If next is a object call setInput
 }

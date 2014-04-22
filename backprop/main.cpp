@@ -138,7 +138,7 @@ int main(){
 	int  testSet	= 0;								//Initial imageset to start on
 	int	 endSet		= 10;								//Which imageset to end on
 	int  count		= 0;								//Counter for which round is running
-	int	 endCount =	200000;						//Run learning for this many rounds
+	int	 endCount =	100000;						//Run learning for this many rounds
 
 	loadDataSet();										//Load input data
 	networkSetup();										//Set up the network with links
@@ -151,28 +151,30 @@ int main(){
 		treshold();											//calculate the tresholds for the network
 		updateWeights();								//Change weights in the network for all
 																		//		nodes that are not converged
+																		//Print some information about current state
+		if( testSet == 0 && count % 500 == 0 ){
+			cout << "\n";
+			output->display();					//Display output layer
+																	//Print some separator
+			cout << testChar << " " << testSet << " - TRAINING ROUND:   " << count << "\n";
+			cout <<	setw(93) << setfill('-') << "-\n" << setfill(' ');
+		}
 
 		if(testChar == endChar){				//If at last characther in the set
-			
-	 		if( count % 500 == 0 ){				//Print some information about current state
-				output->display();					//Display output layer
-																		//Print some separator
-				cout << "TRAINING ROUND:   " << count << "\n";
-				cout <<	setw(100) << setfill('-') << "-\n" << setfill(' ');
-			}
-
+			testChar	= 'A';						//Reset character
 			testSet++;										//increment testSet
 			
 			if( testSet == endSet){				//If at last testSet
 				testSet		= 0;							//Reset counter
-				testChar	= 'A';						//Reset character
 				count ++;										//Failsafe to avoid endless loop
 			}															//End if check for last testSet
 		}																//End if check for last character of set
 		else{														//If not last character of set
-			testChar=char(int(testChar)+1);//Grab the next character set
+																		//Grab the next character set
+			testChar = char( int( testChar ) + 1 );
 		}																//End of else
-	}	while( count < endCount );			//Run the learning system for x rounds
+
+	}	while( count <= endCount );			//Run the learning system for x rounds
 	saveANN();												//Save weights to file
 	return 0;													//Exit gracefully
 }
@@ -186,10 +188,9 @@ int main(){
 	*	same for the next element.
 	**/
 void	Node::setInput(){
-	input		= inData->getValue( id );			//Set input to real pixel value 0-255
-	//output	= ( input / 128.0 ) - 1;			//Calculate the value to a relative value
-	output	= (input > 200) ? -1 : 1;			//Calculate the value to a relative value
-	if( next != NULL )	next->setInput();	//If next is a object call setInput
+	input		= inData->getValue( id );		//Set input to real pixel value 0-255
+	output	= (input > 200) ? 0 : 1;		//Calculate the value to a relative value
+	if( next != NULL )	next->setInput();//If next is a object call setInput
 }
 
 /**

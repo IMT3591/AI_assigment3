@@ -448,7 +448,6 @@
 
 \newcommand\makebib{
 	\pagespace
-	\pagenumbering{Roman}
 	\pagestyle{preamble}
 	\if@showBib
 		% plain, unsrt, alpha, abbrv

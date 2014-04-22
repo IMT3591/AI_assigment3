@@ -1,20 +1,86 @@
 \chapter{Performance}
 
-\section{Same set testing}
+\section{Learning}
+During our learning sessions we did try different values for our network, but
+didn't try different topologies after doing the initial tests. We landed upon
+having a topology with a single hidden layer consisting of 10 perceptrons. The
+learning algorithm with back propagation was then run a 100.000 times on the
+entire testing dataset to reduce the errors. After a couple of initial tests at
+30.000 runs, there was still some perceptrons that didn't converge fully but had
+an offset from the target value of 0.01.
 
-\section{Learning Set 1-10}
-\subsection{Set 1-10 - Same Set Test}
-\input{chapters/tableA}
+This was by far the worst offset from target value, but mostly because we had
+set the threshold at 0.005.
 
-\subsection{Set 11-20}
+There are also some other choices we made which may have resulted in a worse
+time performance since we are allways doing weight updates, even when the
+perceptron is within its target output.  But we have not made these tests to
+know for sure.
+
+Below we have recorded some statistics of how long it took to learn and run the
+different set, to illustrate the differences. As you can see the last run had a
+maximum offset from target of 0.0059, which is more than tolerable and adequate
+for testing.  The calculated error values for the perceptron is considered equal
+to zero since they are so low.
+
+\begin{longtable}{ p{0.15\textwidth} p{0.15\textwidth} p{0.15\textwidth} 
+									 p{0.075\textwidth} p{0.1\textwidth} p{0.2\textwidth} }
+\textbf{Data set} & \textbf{Rounds}		& \textbf{Time} 			& & 
+									  \textbf{Error}	& \textbf{Offset Target} \\\hline 
+1-10	& 100.000 & 00:24:54.194	& MAX 	& 0	& 0.0059 	\\
+			& 				& 							& MIN 	& 0	& -0.0038	\\
+			& 				& 							& AVG 	& 0	& -0.0001	\\
+11-20	& 100.000 & 00:25:15.142	& MAX 	& 0	& 0.0045	\\
+			& 				& 							& MIN 	& 0	& -0.0035	\\
+			& 				& 							& AVG 	& 0	& -0.0001	\\
+\end{longtable}
 
 
-\section{Learning Set 11-20}
-\subsection{Set 11-20 - Same Set Test}
-List the average values of the resulting data set
+\section{Testing}
+For our testing we ran four test using our final 2 sets of network training
+weights.  We ran, as show in the next chapter, the four tests: learn data set
+1-10 and test both data set 1-10 and 11-20 against the resulting network. Learn
+data set 11-20 and test both data set 1-10 and 11-20 against the resulting
+network.  The resulting information is then feed into a spreadsheet program as a
+CSV file where we do some quick calculations and editing before exporting them
+to the report format shown in the result chapter.
 
-\subsection{Set 1-10}
-List the average values of the resulting data set
+The summary of the data presented in the next chapter are the averaged values of
+the the 10 data sets it is being ran through.  This means that the represented
+values in the tables are the average of 10 runs per character.  This means that
+some of the data sets will have a different value, than the rest.
 
+A short summary of the data is that we have a good network that can identify
+very well the data set it was trained with. It performs adequately against the
+opposite dataset in accordance to which we trained with. When testing the
+opposite data set we receive a good amount of errors, but it is mostly able to
+identify the correct characters with a mid-range certainty.
+
+Overall performance of the network is relatively good. It should be pointed out
+that we could have implemented more tests and tested different topologies, but
+due to programming errors and wasted time it was left undone. But the program is
+very modular and can easily be used for testing.
+
+\subsection{Data set review}
+As we can see from the two tables, table \ref{tab:dtaA} and \ref{tab:dtaD}, 
+where we have trained and tested using the same data sets. The reckognition rate
+for the characters are between 90\% and 100\%. which is good results but very
+biased since this is the data we have trained with.
+
+As is clearly shown in table \ref{tab:dtaA} and \ref{tab:dtaD} you can see that
+the resulting matrix has a diagonal. This diagonal indicates that the correct
+character was identified with a very good rate.
+
+If we instead look at the tests where we ran the data set which we didn't
+train with. We can here see that the reckognition of characters is not as good
+as the previous test.  The values for each character is more spread than the
+"same-set" tests.  Even though the reckognition rates for the characters are
+being spread out, it still has the reckognizable diagonal which identifies the
+letters as the correct character with a significant higher value than the rest
+of the values.
+
+As is clearly shown in table \ref{tab:dtaB} and \ref{tab:dtaC} you can see that
+the resulting matrix has a diagonal. This diagonal indicates that the correct
+character was identified with a very good rate.
 
 
