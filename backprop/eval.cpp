@@ -463,7 +463,7 @@ void networkSetup(){
 	int pixels, outputs, layers, nodes;
 
 	ifstream in;
-	in.open("savefile.net");
+	in.open("savefile2.net");
 	if( in.is_open() ){
 		in >> pixels; 	in.ignore();
 		in >> outputs;	in.ignore();

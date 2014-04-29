@@ -1,13 +1,13 @@
 //Written by Magnus Øverbø - 2014
 
 //Includes
-#include <stdio.h>				//Standard library for some things
-#include <iostream>				//Standard input output cin/cout
-#include <fstream>				//Used for file streams
-#include <cstdlib>				//Used for rand()
-#include <cmath>					//Used for math. abs(), exp()
-#include <iomanip>				//align text
-using namespace std;			//Namespace to use
+#include <stdio.h>									//Standard library for some things
+#include <iostream>									//Standard input output cin/cout
+#include <fstream>									//Used for file streams
+#include <cstdlib>									//Used for rand()
+#include <cmath>										//Used for math. abs(), exp()
+#include <iomanip>									//align text
+using namespace std;								//Namespace to use
 
 // Global values
 const int 	NUM_OF_LETTER		= 26;		//Number of different charachters in set
@@ -154,15 +154,16 @@ int main(){
 																		//Print some information about current state
 		if( testSet == 0 && count % 500 == 0 ){
 			cout << "\n";
-			output->display();					//Display output layer
-																	//Print some separator
+			output->display();						//Display output layer
+																		//Print some separator
 			cout << testChar << " " << testSet << " - TRAINING ROUND:   " << count << "\n";
 			cout <<	setw(93) << setfill('-') << "-\n" << setfill(' ');
+			saveANN();												//Save weights to file
 		}
 
 		if(testChar == endChar){				//If at last characther in the set
-			testChar	= 'A';						//Reset character
-			testSet += 2;										//increment testSet
+			testChar	= 'A';							//Reset character
+			testSet++;										//increment testSet
 			
 			if( testSet == endSet){				//If at last testSet
 				testSet		= 0;							//Reset counter
@@ -217,9 +218,9 @@ void	Weight::write( ofstream& out){
 	* \brief 	For all Nodes in layer write their Weights to file
 	**/
 void	Node::write( ofstream& out){
-	if( weight != NULL )			//If it has any Weight elements
-		weight->write( out );		//Write weights to file
-	out << "\n";							//Write a new line to separate nodes
+	if( weight != NULL )									//If it has any Weight elements
+		weight->write( out );								//Write weights to file
+	out << "\n";													//Write a new line to separate nodes
 	if( next != NULL )	next->write(out);	//Do the same for next Node in layer
 }
 
